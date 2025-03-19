@@ -1,28 +1,69 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:globally/components/my_button.dart';
 import 'package:globally/components/my_textfield.dart';
-import 'package:globally/components/my_button.dart';
 
-class RegisterPage extends StatelessWidget {
+import '../helper/helper_functions.dart';
+
+class RegisterPage extends StatefulWidget {
 
   final Function()? onTap;
 
-  RegisterPage({super.key, required this.onTap});
+  const RegisterPage({super.key, required this.onTap});
 
+  @override
+  State<RegisterPage> createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController usernameController = TextEditingController();
+
   final TextEditingController emailController = TextEditingController();
+
   final TextEditingController passwordController = TextEditingController();
+
   final TextEditingController confirmPwController = TextEditingController();
 
   //register method
-  void register(){
+  void registerUser() async{
+    //loading
+    showDialog(context: context,
+        builder: (context)=> const Center(
+          child: CircularProgressIndicator(),
+        ),
+    );
+
+    // password don't match
+    if (passwordController.text != confirmPwController.text){
+      //loading stops
+      Navigator.pop(context);
+      //error message
+      displayMessageToUser("Passwords don't match!",context);
+    }
+
+    // passwords match
+    else {
+      try {
+        //attempt
+        UserCredential? userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(email: emailController.text, password: passwordController.text,);
+        //loading stops
+        Navigator.pop(context);
+      } on FirebaseAuthException catch(e){
+        //loading stops
+        Navigator.pop(context);
+        //display error
+        displayMessageToUser(e.code, context);
+      }
+    }
+
+    // try create user
 
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: Center(
             child: Padding(
               padding: const EdgeInsets.all(25.0),
@@ -87,7 +128,7 @@ class RegisterPage extends StatelessWidget {
                   const SizedBox(height: 25),
                   MyButton(
                     text: "Register",
-                    onTap: register,
+                    onTap: registerUser,
                   ),
 
                   //registration
@@ -101,7 +142,7 @@ class RegisterPage extends StatelessWidget {
                         ),
                       ),
                       GestureDetector(
-                        onTap: onTap,
+                        onTap: widget.onTap,
                         child: Text(" Login Here",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
