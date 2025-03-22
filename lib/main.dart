@@ -28,7 +28,7 @@ class MainApp extends StatelessWidget {
       darkTheme: darkMode,
       routes: {
         '/login_register_page':(context) => const LoginOrRegister(),
-        '/home_page':(context) => const HomePage(),
+        '/home_page':(context) => HomePage(),
         '/profile_page':(context) => ProfilePage(),
         '/users_page':(context) => const UsersPage()
       },

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:globally/components/my_list_tile.dart';
 import 'package:globally/helper/helper_functions.dart';
 
 import '../components/my_back_button.dart';
@@ -35,7 +36,7 @@ class UsersPage extends StatelessWidget{
               children: [
 
                 const Padding(
-                  padding: const EdgeInsets.only(top:50.0,left:25.0),
+                  padding: const EdgeInsets.only(top:50.0,left:25.0,bottom:20),
                   child: Row(
                     children: [
                       MyBackButton(),
@@ -49,10 +50,11 @@ class UsersPage extends StatelessWidget{
                     padding: const EdgeInsets.all(0),
                     itemBuilder: (context,index) {
                       final user = users[index];
-                      return ListTile(
-                        title: Text(user["username"]),
-                        subtitle: Text(user["email"]),
-                      );
+
+                      String username = user["username"];
+                      String email = user["email"];
+
+                      return MyListTile(title: username, subTitle: email);
                     },
                   ),
                 )
