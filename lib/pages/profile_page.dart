@@ -1,88 +1,226 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:globally/components/my_back_button.dart';
+import 'package:image_picker/image_picker.dart';
 
-class ProfilePage extends StatelessWidget{
-  ProfilePage({super.key});
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
 
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
   final User? currentUser = FirebaseAuth.instance.currentUser;
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController summaryController = TextEditingController();
 
-  Future<DocumentSnapshot<Map<String,dynamic>>> getUserDetails() async{
-    return await FirebaseFirestore.instance
+  String? profileImageUrl;
+  File? newProfileImage;
+
+  bool isEditing = false;
+
+  String originalUsername = '';
+  String originalSummary = '';
+  String? originalImageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserData();
+  }
+
+  Future<void> loadUserData() async {
+    final doc = await FirebaseFirestore.instance
         .collection("Users")
         .doc(currentUser!.email)
         .get();
+
+    final data = doc.data();
+    if (data != null) {
+      setState(() {
+        originalUsername = data["username"] ?? '';
+        originalSummary = data["summary"] ?? '';
+        originalImageUrl = data["profileImageUrl"];
+
+        usernameController.text = originalUsername;
+        summaryController.text = originalSummary;
+        profileImageUrl = originalImageUrl;
+      });
+    }
+  }
+
+  Future<void> pickProfileImage() async {
+    if (!isEditing) return;
+
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        newProfileImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<void> saveChanges() async {
+    String? imageUrl = profileImageUrl;
+
+    if (newProfileImage != null) {
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child("profile_pics/${currentUser!.uid}.jpg");
+
+      await ref.putFile(newProfileImage!);
+      imageUrl = await ref.getDownloadURL();
+    }
+
+    await FirebaseFirestore.instance
+        .collection("Users")
+        .doc(currentUser!.email)
+        .update({
+      "username": usernameController.text,
+      "summary": summaryController.text,
+      "profileImageUrl": imageUrl,
+    });
+
+    setState(() {
+      profileImageUrl = imageUrl;
+      originalImageUrl = imageUrl;
+      originalUsername = usernameController.text;
+      originalSummary = summaryController.text;
+      newProfileImage = null;
+      isEditing = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Profile updated")),
+    );
+  }
+
+  void cancelEdit() {
+    setState(() {
+      usernameController.text = originalUsername;
+      summaryController.text = originalSummary;
+      profileImageUrl = originalImageUrl;
+      newProfileImage = null;
+      isEditing = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      body: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        future: getUserDetails(),
-        builder: (context, snapshot){
-          if (snapshot.connectionState == ConnectionState.waiting){
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-
-          else if (snapshot.hasError){
-            return Text("Error: ${snapshot.error}");
-          }
-
-          else if (snapshot.hasData){
-            Map<String, dynamic>? user = snapshot.data!.data();
-
-            return Center(
-              child: Column(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 50.0),
+          child: Column(
+            children: [
+              Row(
                 children: [
-                  const Padding(
-                    padding: const EdgeInsets.only(top:50.0,left:25.0),
-                    child: Row(
-                      children: [
-                        MyBackButton(),
-                      ],
+                  const MyBackButton(),
+                  const Spacer(),
+                  if (!isEditing)
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        setState(() {
+                          isEditing = true;
+                        });
+                      },
                     ),
-                  ),
-
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(24)
-                    ),
-                    padding: const EdgeInsets.all(25),
-                    child: const Icon(
-                        Icons.person,
-                        size: 64,
-                    ),
-                  ),
-
-                  const SizedBox(height: 25,),
-
-                  Text(user!["username"],
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(user["email"],
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                    ),
-                  ),
                 ],
               ),
-            );
-          }
+              const SizedBox(height: 20),
 
-          else {
-            return const Text("No Data");
-          }
-        },
+              // Profile Image
+              GestureDetector(
+                onTap: pickProfileImage,
+                child: CircleAvatar(
+                  radius: 60,
+                  backgroundImage: newProfileImage != null
+                      ? FileImage(newProfileImage!)
+                      : (profileImageUrl != null
+                      ? NetworkImage(profileImageUrl!)
+                      : null) as ImageProvider<Object>?,
+                  child: (!isEditing &&
+                      newProfileImage == null &&
+                      profileImageUrl == null)
+                      ? const Icon(Icons.person, size: 64)
+                      : null,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Username
+              isEditing
+                  ? TextField(
+                controller: usernameController,
+                decoration: const InputDecoration(
+                  labelText: "Username",
+                  border: OutlineInputBorder(),
+                ),
+              )
+                  : Text(
+                usernameController.text,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Summary
+              isEditing
+                  ? TextField(
+                controller: summaryController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: "Summary",
+                  border: OutlineInputBorder(),
+                ),
+              )
+                  : Text(
+                summaryController.text.isNotEmpty
+                    ? summaryController.text
+                    : "No summary provided.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              // Save & Cancel buttons
+              if (isEditing)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: saveChanges,
+                      icon: const Icon(Icons.save),
+                      label: const Text("Save"),
+                    ),
+                    const SizedBox(width: 20),
+                    OutlinedButton.icon(
+                      onPressed: cancelEdit,
+                      icon: const Icon(Icons.cancel),
+                      label: const Text("Cancel"),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
       ),
-
     );
   }
 }

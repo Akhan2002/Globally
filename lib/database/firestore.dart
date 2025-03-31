@@ -10,11 +10,14 @@ class FirestoreDatabase {
   final CollectionReference posts = FirebaseFirestore.instance.collection("Posts");
 
   //post a message
-  Future<void> addPost(String message){
-    return posts.add({
-      'UserEmail': user!.email,
-      'PostMessage': message,
-      'TimeStamp': Timestamp.now(),
+  Future<void> addPost(String message, {String? imageUrl}) async {
+    final userEmail = FirebaseAuth.instance.currentUser?.email;
+
+    await FirebaseFirestore.instance.collection("Posts").add({
+      "UserEmail": userEmail,
+      "PostMessage": message,
+      "TimeStamp": Timestamp.now(),
+      if (imageUrl != null) "ImageUrl": imageUrl,
     });
   }
 

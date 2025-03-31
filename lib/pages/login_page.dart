@@ -5,7 +5,6 @@ import 'package:globally/components/my_textfield.dart';
 import 'package:globally/helper/helper_functions.dart';
 
 class LoginPage extends StatefulWidget {
-
   final void Function()? onTap;
 
   const LoginPage({super.key, required this.onTap});
@@ -16,30 +15,22 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
-
   final TextEditingController passwordController = TextEditingController();
 
-  //login method
-  void login() async{
-    //loading
-    showDialog(context: context, builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      )
+  void login() async {
+    showDialog(
+      context: context,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    //sign in attempt
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: emailController.text,
-          password: passwordController.text
+        email: emailController.text,
+        password: passwordController.text,
       );
 
-      //stop loading circle
-      if(context.mounted) Navigator.pop(context);
-    }
-
-    //error display
-    on FirebaseAuthException catch (e) {
+      if (context.mounted) Navigator.pop(context);
+    } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
       displayMessageToUser(e.code, context);
     }
@@ -48,10 +39,16 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(25.0),
+      resizeToAvoidBottomInset: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: 25.0,
+            right: 25.0,
+            top: 50.0,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 25,
+          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -60,73 +57,52 @@ class _LoginPageState extends State<LoginPage> {
                 size: 80,
                 color: Theme.of(context).colorScheme.inversePrimary,
               ),
-
-              // app name
               const SizedBox(height: 25),
-              const Text(
-                "Globally",
-                style: TextStyle(fontSize: 20),
-              ),
-
-              //email field
+              const Text("Globally", style: TextStyle(fontSize: 20)),
               const SizedBox(height: 50),
               MyTextField(
-                  hintText: "Email",
-                  obscureText: false,
-                  controller: emailController
+                hintText: "Email",
+                obscureText: false,
+                controller: emailController,
               ),
-
               const SizedBox(height: 10),
               MyTextField(
-                  hintText: "Password",
-                  obscureText: true,
-                  controller: passwordController
+                hintText: "Password",
+                obscureText: true,
+                controller: passwordController,
               ),
-
-              //forgot password
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text("Forgot Password?",
+                  Text(
+                    "Forgot Password?",
                     style: TextStyle(color: Theme.of(context).colorScheme.inversePrimary),
                   ),
-
                 ],
               ),
-
-              //signin button
               const SizedBox(height: 25),
-              MyButton(
-                  text: "Login",
-                  onTap: login,
-              ),
-
-              //registration
+              MyButton(text: "Login", onTap: login),
               const SizedBox(height: 25),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Don't Have an Account?",
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.inversePrimary,
-                    ),
+                  Text(
+                    "Don't Have an Account?",
+                    style: TextStyle(color: Theme.of(context).colorScheme.inversePrimary),
                   ),
                   GestureDetector(
                     onTap: widget.onTap,
-                    child: Text(" Register Here",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: const Text(
+                      " Register Here",
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
               ),
-
             ],
           ),
-        )
-
-      )
+        ),
+      ),
     );
   }
 }

@@ -8,11 +8,18 @@ import 'package:globally/pages/profile_page.dart';
 import 'package:globally/pages/users_page.dart';
 import 'package:globally/theme/light_mode.dart';
 import 'package:globally/theme/dark_mode.dart';
-
+import 'package:firebase_app_check/firebase_app_check.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.debug,
+  );
+
   runApp(const MainApp());
 }
 
