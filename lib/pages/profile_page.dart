@@ -204,16 +204,55 @@ class _ProfilePageState extends State<ProfilePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    ElevatedButton.icon(
+                    ElevatedButton(
                       onPressed: saveChanges,
-                      icon: const Icon(Icons.save),
-                      label: const Text("Save"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.tealAccent[700]
+                            : Colors.blueAccent,
+                        foregroundColor: Colors.white,
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.save),
+                          SizedBox(width: 8),
+                          Text("Save"),
+                        ],
+                      ),
                     ),
                     const SizedBox(width: 20),
-                    OutlinedButton.icon(
+                    OutlinedButton(
                       onPressed: cancelEdit,
-                      icon: const Icon(Icons.cancel),
-                      label: const Text("Cancel"),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.tealAccent
+                              : Colors.blueAccent,
+                        ),
+                        foregroundColor: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.tealAccent
+                            : Colors.blueAccent,
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.cancel),
+                          SizedBox(width: 8),
+                          Text("Cancel"),
+                        ],
+                      ),
                     ),
                   ],
                 ),

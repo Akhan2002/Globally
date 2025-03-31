@@ -240,7 +240,9 @@ class _HomePageState extends State<HomePage> {
                                   Text(
                                     username,
                                     style: TextStyle(
-                                      color: Colors.grey[800],
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                          ? Colors.white
+                                          : Colors.black,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),

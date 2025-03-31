@@ -139,9 +139,22 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
               // Follow Button
               ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isOwnProfile
+                      ? Colors.grey
+                      : Theme.of(context).brightness == Brightness.dark
+                      ? Colors.tealAccent[700]
+                      : Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 onPressed: isOwnProfile ? null : toggleFollow,
-                icon:
-                Icon(isFollowing ? Icons.person_remove : Icons.person_add),
+                icon: Icon(isFollowing ? Icons.person_remove : Icons.person_add),
                 label: Text(
                   isOwnProfile
                       ? "This is you"
