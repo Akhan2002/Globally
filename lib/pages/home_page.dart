@@ -11,6 +11,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
 
+import '../components/my_feed.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -173,108 +175,14 @@ class _HomePageState extends State<HomePage> {
             )
 
           else
-            StreamBuilder(
-              stream: database.getPostsStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Expanded(
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-
-                final posts = snapshot.data!.docs;
-                if (snapshot.data == null || posts.isEmpty) {
-                  return const Expanded(
-                    child: Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(25),
-                        child: Text("No Posts...Post Something!"),
-                      ),
-                    ),
-                  );
-                }
-
-                return Expanded(
-                  child: ListView.builder(
-                    itemCount: posts.length,
-                      itemBuilder: (context, index) {
-                        final post = posts[index];
-                        final Map<String, dynamic>? postData = post.data() as Map<String, dynamic>?;
-                        String message = post["PostMessage"];
-                        String userEmail = post["UserEmail"];
-                        String? imageUrl = postData != null && postData.containsKey("ImageUrl")
-                            ? postData["ImageUrl"]
-                            : null;
-
-                        final userInfo = userMap[userEmail];
-                        final username = userInfo?["username"] ?? userEmail;
-                        final profileImageUrl = userInfo?["profileImageUrl"];
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-                              child: Row(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => UserProfilePage(targetEmail: userEmail),
-                                        ),
-                                      );
-                                    },
-                                    child: CircleAvatar(
-                                      radius: 16,
-                                      backgroundImage: profileImageUrl != null
-                                          ? NetworkImage(profileImageUrl)
-                                          : null,
-                                      child: profileImageUrl == null
-                                          ? const Icon(Icons.person, size: 16)
-                                          : null,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    username,
-                                    style: TextStyle(
-                                      color: Theme.of(context).brightness == Brightness.dark
-                                          ? Colors.white
-                                          : Colors.black,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (message.isNotEmpty)
-                              MyListTile(title: message, subTitle: ''),
-                            if (imageUrl != null)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                                child: GestureDetector(
-                                  onTap: () => showFullImage(context, imageUrl),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Image.network(
-                                      imageUrl,
-                                      height: 200,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        );
-                      },
-                  ),
-                );
-              },
-            ),
+            if (userMap.isEmpty)
+              const Expanded(child: Center(child: CircularProgressIndicator()))
+            else
+              MyFeed(
+                postStream: database.getPostsStream(),
+                userMap: userMap,
+                onImageTap: (url) => showFullImage(context, url),
+              ),
         ],
       ),
     );
