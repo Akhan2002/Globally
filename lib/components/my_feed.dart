@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:globally/components/my_list_tile.dart';
 import 'package:globally/pages/user_profile_page.dart';
@@ -67,6 +68,12 @@ class MyFeed extends StatelessWidget {
         final message = postData["PostMessage"] ?? '';
         final userEmail = postData["UserEmail"];
         final imageUrl = postData["ImageUrl"];
+        final postId = post.id;
+        final timestamp = postData["TimeStamp"] as Timestamp?;
+        final postTime = timestamp?.toDate();
+        final formattedTime = postTime != null
+            ? "${postTime.month}/${postTime.day} ${postTime.hour}:${postTime.minute.toString().padLeft(2, '0')}"
+            : '';
 
         final userInfo = userMap[userEmail];
         final username = userInfo?["username"] ?? userEmail;
@@ -125,6 +132,60 @@ class MyFeed extends StatelessWidget {
                   ),
                 ),
               ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection("Posts")
+                    .doc(postId)
+                    .collection("likes")
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final user = FirebaseAuth.instance.currentUser;
+                  final hasLiked = snapshot.data?.docs
+                      .any((doc) => doc.id == user?.email) ??
+                      false;
+                  final likeCount = snapshot.data?.docs.length ?? 0;
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              hasLiked ? Icons.favorite : Icons.favorite_border,
+                              color: hasLiked ? Colors.red : Colors.grey,
+                            ),
+                            onPressed: () async {
+                              final ref = FirebaseFirestore.instance
+                                  .collection("Posts")
+                                  .doc(postId)
+                                  .collection("likes")
+                                  .doc(user!.email);
+
+                              if (hasLiked) {
+                                await ref.delete();
+                              } else {
+                                await ref.set({"timestamp": Timestamp.now()});
+                              }
+                            },
+                          ),
+                          Text('$likeCount'),
+                        ],
+                      ),
+                      Text(
+                        formattedTime,
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
           ],
         );
       },

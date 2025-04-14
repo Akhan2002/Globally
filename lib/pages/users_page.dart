@@ -70,7 +70,7 @@ class _UsersPageState extends State<UsersPage> {
                     final user = users[index];
                     final String username = user["username"] ?? "Unknown";
                     final String email = user["email"];
-                    final Map<String, dynamic> data = user.data() as Map<String, dynamic>;
+                    final Map<String, dynamic> data = user.data();
                     final String? imageUrl = data.containsKey("profileImageUrl") ? data["profileImageUrl"] : null;
                     final bool isOwnAccount = email == FirebaseAuth.instance.currentUser?.email;
 
