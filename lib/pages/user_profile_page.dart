@@ -54,16 +54,27 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Future<void> toggleFollow() async {
-    final ref = FirebaseFirestore.instance
+    final currentUserEmail = currentUser!.email!;
+    final targetEmail = widget.targetEmail;
+
+    final targetFollowerRef = FirebaseFirestore.instance
         .collection("Users")
-        .doc(widget.targetEmail)
+        .doc(targetEmail)
         .collection("followers")
-        .doc(currentUser!.email);
+        .doc(currentUserEmail);
+
+    final currentUserFollowingRef = FirebaseFirestore.instance
+        .collection("Users")
+        .doc(currentUserEmail)
+        .collection("following")
+        .doc(targetEmail);
 
     if (isFollowing) {
-      await ref.delete();
+      await targetFollowerRef.delete();
+      await currentUserFollowingRef.delete();
     } else {
-      await ref.set({"timestamp": Timestamp.now()});
+      await targetFollowerRef.set({"timestamp": Timestamp.now()});
+      await currentUserFollowingRef.set({"timestamp": Timestamp.now()});
     }
 
     setState(() {

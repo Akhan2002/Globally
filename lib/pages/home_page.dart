@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:globally/components/my_drawer.dart';
 import 'package:globally/components/my_list_tile.dart';
@@ -20,17 +21,53 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   final FirestoreDatabase database = FirestoreDatabase();
   final TextEditingController newPostController = TextEditingController();
+  final List<String> followingEmails = [];
   File? selectedImageFile;
 
   Map<String, Map<String, dynamic>> userMap = {}; // email → {username, profileImageUrl}
 
+  late TabController _tabController;
+
+  @override
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.index == 1) {
+        // When switching to "Following" tab
+        loadFollowing();
+      }
+    });
     loadUserMap();
+    loadFollowing();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> loadFollowing() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection("Users")
+        .doc(user.email)
+        .collection("following")
+        .get();
+
+    setState(() {
+      followingEmails.clear();
+      for (var doc in snapshot.docs) {
+        followingEmails.add(doc.id);
+      }
+    });
   }
 
   Future<void> loadUserMap() async {
@@ -170,19 +207,60 @@ class _HomePageState extends State<HomePage> {
 
           // ✅ Wait for userMap to load first
           if (userMap.isEmpty)
-            const Expanded(
-              child: Center(child: CircularProgressIndicator()),
-            )
-
+            const Expanded(child: Center(child: CircularProgressIndicator()))
           else
-            if (userMap.isEmpty)
-              const Expanded(child: Center(child: CircularProgressIndicator()))
-            else
-              MyFeed(
-                postStream: database.getPostsStream(),
-                userMap: userMap,
-                onImageTap: (url) => showFullImage(context, url),
+            Expanded(
+              child: Column(
+                children: [
+                  TabBar(
+                    controller: _tabController,
+                    labelColor: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : Colors.black,
+                    unselectedLabelColor: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[700],
+                    indicatorColor: Theme.of(context).colorScheme.primary,
+                    tabs: const [
+                      Tab(text: "All Posts"),
+                      Tab(text: "Following"),
+                    ],
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        // All Posts
+                        MyFeed(
+                          postStream: database.getPostsStream(),
+                          userMap: userMap,
+                          onImageTap: (url) => showFullImage(context, url),
+                        ),
+                          // Following Only Posts
+                        StreamBuilder<QuerySnapshot>(
+                          stream: database.getPostsStream(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
+                            final allPosts = snapshot.data?.docs ?? [];
+                            final filteredPosts = allPosts
+                                .where((post) => followingEmails.contains(post['UserEmail']))
+                                .toList();
+
+                            return MyFeed(
+                              posts: filteredPosts,
+                              userMap: userMap,
+                              onImageTap: (url) => showFullImage(context, url),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
+            ),
         ],
       ),
     );
