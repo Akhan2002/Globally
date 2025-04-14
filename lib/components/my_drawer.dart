@@ -41,6 +41,22 @@ class MyDrawer extends StatelessWidget {
                   },
                 ),
               ),
+
+              Padding(
+                padding: const EdgeInsets.only(left: 25.0),
+                child: ListTile(
+                  leading: Icon(
+                    Icons.favorite,
+                    color: Theme.of(context).colorScheme.inversePrimary,
+                  ),
+                  title: Text("F A V O R I T E S"),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/favorites_page');
+                  },
+                ),
+              ),
+
               //account tile
               Padding(
                 padding: const EdgeInsets.only(left: 25.0),

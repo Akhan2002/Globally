@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:globally/auth/auth.dart';
 import 'package:globally/auth/login_or_register.dart';
 import 'package:globally/firebase_options.dart';
+import 'package:globally/pages/favorites_page.dart';
 import 'package:globally/pages/home_page.dart';
 import 'package:globally/pages/profile_page.dart';
 import 'package:globally/pages/users_page.dart';
@@ -36,6 +37,7 @@ class MainApp extends StatelessWidget {
       routes: {
         '/login_register_page':(context) => const LoginOrRegister(),
         '/home_page':(context) => HomePage(),
+        '/favorites_page': (context) => const FavoritesPage(),
         '/profile_page':(context) => ProfilePage(),
         '/users_page':(context) => const UsersPage()
       },
