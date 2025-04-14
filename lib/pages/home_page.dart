@@ -24,6 +24,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   final TextEditingController newPostController = TextEditingController();
   final List<String> followingEmails = [];
   File? selectedImageFile;
+  bool isPosting = false;
 
   Map<String, Map<String, dynamic>> userMap = {}; // email → {username, profileImageUrl}
 
@@ -114,6 +115,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   void postMessage() async {
+    if (isPosting) return; // prevent spamming
+    setState(() {
+      isPosting = true;
+    });
+
     String message = newPostController.text;
     String? imageUrl;
 
@@ -137,6 +143,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
     setState(() {
       selectedImageFile = null;
+      isPosting = false;
     });
 
     newPostController.clear();
@@ -196,7 +203,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       icon: const Icon(Icons.image),
                       onPressed: selectImage,
                     ),
-                    PostButton(onTap: postMessage),
+                    PostButton(
+                      onTap: isPosting ? null : postMessage,
+                      isLoading: isPosting,
+                    ),
                   ],
                 ),
               ],
