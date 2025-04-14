@@ -19,9 +19,15 @@ class MyDrawer extends StatelessWidget {
             children: [
               //drawer header
               DrawerHeader(
-                child: Icon(
-                  Icons.favorite,
-                  color: Theme.of(context).colorScheme.inversePrimary,
+                decoration: BoxDecoration(
+                  color: Colors.grey,
+                ),
+                child: Center(
+                  child: Image.asset(
+                    'lib/assets/icon_glob.png',
+                    width: 140,
+                    height: 140,
+                  ),
                 ),
               ),
 
