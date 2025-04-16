@@ -9,8 +9,38 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
-
 import '../components/my_feed.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+Future<bool> isContentFlaggedByOpenAI(String text) async {
+  final apiKey = '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';
+  final url = Uri.parse('https://api.openai.com/v1/moderations');
+
+  final response = await http.post(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $apiKey',
+    },
+    body: jsonEncode({'input': text}),
+  );
+
+  if (response.statusCode == 200) {
+    final body = jsonDecode(response.body);
+    final result = body['results'][0];
+    final categories = result['categories'];
+    final scores = result['category_scores'];
+
+    // Customize here: allow mild violence, but block hate/sexual content
+    return categories['hate'] == true ||
+        categories['sexual'] == true ||
+        scores['violence'] > 0.85; // custom threshold
+  } else {
+    print("❌ Moderation failed: ${response.statusCode}");
+    return false;
+  }
+}
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -27,8 +57,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   bool isPosting = false;
 
   Map<String, Map<String, dynamic>> userMap = {}; // email → {username, profileImageUrl}
-
   late TabController _tabController;
+
+  final List<String> blockedWords = [
+    'nigger', 'faggot', 'tranny', 'cunny'
+  ];
+
 
   @override
   @override
@@ -115,6 +149,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   void postMessage() async {
+
     if (isPosting) return; // prevent spamming
     setState(() {
       isPosting = true;
@@ -122,6 +157,35 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
     String message = newPostController.text;
     String? imageUrl;
+
+    final lowerMessage = message.toLowerCase();
+    final containsBlockedWord = blockedWords.any((word) => lowerMessage.contains(word));
+
+    if (containsBlockedWord) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("❌ Your post contains inappropriate language."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() {
+        isPosting = false;
+      });
+      return;
+    }
+
+    if (await isContentFlaggedByOpenAI(message)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("❌ Your post contains unsafe content and was blocked."),
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() {
+        isPosting = false;
+      });
+      return;
+    }
 
     if (selectedImageFile != null) {
       String fileName = const Uuid().v4();
