@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:globally/auth/auth.dart';
 import 'package:globally/auth/login_or_register.dart';
@@ -21,6 +22,18 @@ void main() async {
     androidProvider: AndroidProvider.debug,
   );
 
+  /*
+  await Firebase.initializeApp();
+  await FirebaseMessaging.instance.requestPermission();
+  final fcmToken = await FirebaseMessaging.instance.getToken();
+
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    if (message.notification != null) {
+      print('📩 Notification received: ${message.notification!.title}');
+      // Optionally show a local notification here
+    }
+  });
+   */
   runApp(const MainApp());
 }
 

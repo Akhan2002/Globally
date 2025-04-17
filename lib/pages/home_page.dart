@@ -14,7 +14,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 Future<bool> isContentFlaggedByOpenAI(String text) async {
-  final apiKey = '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';
+  final apiKey = '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';
   final url = Uri.parse('https://api.openai.com/v1/moderations');
 
   final response = await http.post(
@@ -35,6 +35,8 @@ Future<bool> isContentFlaggedByOpenAI(String text) async {
     // Customize here: allow mild violence, but block hate/sexual content
     return categories['hate'] == true ||
         categories['sexual'] == true ||
+        categories["self-harm/intent"] == false ||
+        categories["self-harm"] == false ||
         scores['violence'] > 0.85; // custom threshold
   } else {
     print("❌ Moderation failed: ${response.statusCode}");
